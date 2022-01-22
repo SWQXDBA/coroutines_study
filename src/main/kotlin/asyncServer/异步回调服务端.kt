@@ -12,6 +12,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
 import kotlin.concurrent.thread
 
+/*
 class MyHandler<A : Attachment> : CompletionHandler<Int, A> {
     override fun completed(result: Int, attachment: A) {
         val byteBuffer = attachment.byteBuffer
@@ -41,7 +42,7 @@ class MyHandler<A : Attachment> : CompletionHandler<Int, A> {
 }
 
 open class Attachment(
-   // val server: AsynchronousServerSocketChannel,
+    // val server: AsynchronousServerSocketChannel,
     val client: AsynchronousSocketChannel,
     val byteBuffer: ByteBuffer,
     var readMode: Boolean = true
@@ -80,18 +81,18 @@ fun main()  {
     }
 
 
+*/
 /*   runBlocking {
         launch {
             println(Thread.currentThread().name)
-
             awaitCancellation()
         }
-    }*/
+    }*//*
+
 }
 
+*/
 /*
 suspend fun connect(serverSocket: ServerSocket) = suspendCoroutine<Socket> {
-
     COROUTINE_SUSPENDED
-
 }*/

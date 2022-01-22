@@ -29,10 +29,15 @@ class MyClint(val port: Int) {
             val bufferedReader = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
 
 
+            //readLine接收到的没有换行符\n
             val message = bufferedReader.readLine() ?: break
+
             println("来自服务端消息：${message}")
-
-
+            if(message=="bye, too"){
+                clientSocket.close()
+                println("连接已断开")
+                break
+            }
         }
     }
 }
