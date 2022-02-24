@@ -17,25 +17,26 @@ class SelectorServer(private val port: Int) {
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     lateinit var selector: Selector
     fun write(key: SelectionKey){
-        val message = key.attachment() as String
+        val message = key.attachment() as String??: return
         val channel = key.channel() as SocketChannel
-        val put = ByteBuffer.allocate(2048).put(message.toByteArray())
-        put.flip()
+        val put = ByteBuffer.wrap((message+"\n").toByteArray())
+      //  put.flip()
         channel.write(put)
         key.interestOps(SelectionKey.OP_READ)
+        key.attach(null)
     }
-    fun read(key: SelectionKey): String? {
+    fun read(key: SelectionKey){
         try {
             val socketChannel = key.channel() as SocketChannel
             val byteBuffer = ByteBuffer.allocate(4096)
             socketChannel.read(byteBuffer)
 
             if (byteBuffer.limit() == 0) {
-                return null
+                return
             }
             val message = String(byteBuffer.array(), 0, byteBuffer.limit())
-            println("read: $message")
-            byteBuffer.flip()
+            val format = dateFormat.format(Date(System.currentTimeMillis()))
+            println("[$format ${socketChannel.remoteAddress}]: $message")
             val iterator = selector.selectedKeys().iterator()
             while (iterator.hasNext()) {
                 val selectionKey = iterator.next()
@@ -45,12 +46,12 @@ class SelectorServer(private val port: Int) {
                     selectionKey.interestOps( SelectionKey.OP_WRITE)
                 }
             }
-            return message
+
         } catch (e: Exception) {
             key.channel().close()
         }
 
-        return null
+
     }
 
     fun start() {
@@ -62,15 +63,12 @@ class SelectorServer(private val port: Int) {
         println("server started")
         while (true) {
             val count = selector.select()
-            println(count)
             if (count > 0) {
                 val selectedKeys = selector.selectedKeys()
                 val iterator = selectedKeys.iterator()
                 while (iterator.hasNext()) {
                     val next = iterator.next()
-
                     if (next.isValid) {
-
                         if (next.isAcceptable) {
                             //从已就绪的集合中移除 但不会移除注册
                             iterator.remove()
@@ -80,18 +78,15 @@ class SelectorServer(private val port: Int) {
                                 socketChannel.configureBlocking(false)
                                 socketChannel.register(selector, SelectionKey.OP_READ)
                             }
-
-
                         }
                         if (next.isReadable) {
-                            val message = read(next)
-                            if (message != null) {
-                                val format = dateFormat.format(Date(System.currentTimeMillis()))
-                                println("[$format]: $message")
-                            }
+                            read(next)
+                            //如果read时候连接中断了 进入next.isWritable判断的时候会报错
+                            continue
                         }
                         if (next.isWritable) {
                             write(next)
+
                         }
                     }
 
