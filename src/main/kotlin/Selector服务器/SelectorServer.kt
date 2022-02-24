@@ -12,56 +12,67 @@ import java.text.SimpleDateFormat
 import java.util.*
 import javax.sound.sampled.Port
 
- class SelectorServer(private val port:Int) {
-    private val dateFormat =  SimpleDateFormat("yyyy-MM-dd HH:mm:ss" )
-     lateinit var selector:Selector
-    fun read(key:SelectionKey): String? {
+class SelectorServer(private val port: Int) {
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    lateinit var selector: Selector
+    fun read(key: SelectionKey): String? {
         try {
             val socketChannel = key.channel() as SocketChannel
             val byteBuffer = ByteBuffer.allocate(4096)
             socketChannel.read(byteBuffer)
 
-            if (byteBuffer.limit()==0) {
+            if (byteBuffer.limit() == 0) {
                 return null
             }
-            val message = String(byteBuffer.array(),0,byteBuffer.limit())
+            val message = String(byteBuffer.array(), 0, byteBuffer.limit())
             println("read: $message")
-            byteBuffer.flip()
+/*            byteBuffer.flip()
+            val iterator = selector.selectedKeys().iterator()
+            while (iterator.hasNext()) {
+                val channel = iterator.next().channel()
+                if (channel is SocketChannel &&channel!=socketChannel) {
+                    val writeBuffer = ByteBuffer.allocate(4096)
+                    writeBuffer.put( message.toByteArray())
+                    writeBuffer.flip()
+                    socketChannel.write(writeBuffer)
+                }
+            }*/
             return message
-        }catch (e:Exception){
+        } catch (e: Exception) {
             key.channel().close()
         }
 
         return null
     }
-    fun start(){
+
+    fun start() {
         val serverSocketChannel = ServerSocketChannel.open()
         serverSocketChannel.bind(InetSocketAddress(port))
         serverSocketChannel.configureBlocking(false)
         selector = Selector.open()
-        serverSocketChannel.register(selector,SelectionKey.OP_ACCEPT)
+        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT)
         println("server started")
-        while(true){
+        while (true) {
             val count = selector.select()
             println(count)
-            if(count>=0){
+            if (count >= 0) {
                 val selectedKeys = selector.selectedKeys()
                 val iterator = selectedKeys.iterator()
-                while(iterator.hasNext()){
+                while (iterator.hasNext()) {
                     val next = iterator.next()
-                    if(next.isValid){
-                        if(next.isAcceptable){
+                    if (next.isValid) {
+                        if (next.isAcceptable) {
                             val channel = next.channel() as ServerSocketChannel
                             val socketChannel = channel.accept()
-                            if(socketChannel!=null){
+                            if (socketChannel != null) {
                                 socketChannel.configureBlocking(false)
-                                socketChannel.register(selector,SelectionKey.OP_READ)
+                                socketChannel.register(selector, SelectionKey.OP_READ)
                             }
 
                         }
-                        if(next.isReadable){
+                        if (next.isReadable) {
                             val message = read(next)
-                            if(message!=null){
+                            if (message != null) {
                                 val format = dateFormat.format(Date(System.currentTimeMillis()))
                                 println("[$format]: $message")
                             }
@@ -77,6 +88,6 @@ import javax.sound.sampled.Port
     }
 }
 
-fun main() = runBlocking{
+fun main() = runBlocking {
     SelectorServer(3000).start()
 }
