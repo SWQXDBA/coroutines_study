@@ -17,15 +17,17 @@ class MyClint(val port: Int) {
 
         println("已与服务器建立连接")
         val outputStream = clientSocket.getOutputStream()
-        val bufferedWriter = BufferedWriter(OutputStreamWriter(outputStream))
+
         println("获取输出流成功")
         while (scanner.hasNext()) {
+            val bufferedWriter = BufferedWriter(OutputStreamWriter(outputStream))
             val nextLine = scanner.nextLine()
             bufferedWriter.write(nextLine + "\n")
-
             bufferedWriter.flush()
 
+            println("发送了")
 
+/*
             val bufferedReader = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
 
 
@@ -37,11 +39,11 @@ class MyClint(val port: Int) {
                 clientSocket.close()
                 println("连接已断开")
                 break
-            }
+            }*/
         }
     }
 }
 
 fun main() {
-    MyClint(5000).start()
+    MyClint(3000).start()
 }
