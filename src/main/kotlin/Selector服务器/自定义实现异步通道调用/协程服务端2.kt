@@ -30,7 +30,6 @@ class MyServer(private val port: Int) {
                             writeIntoConnect(client, "bye, too\n")
                             break
                         } else {
-
                             writeIntoConnect(client, "我已经收到$message \n")
                         }
                     }

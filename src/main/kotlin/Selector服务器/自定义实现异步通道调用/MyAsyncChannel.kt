@@ -40,8 +40,9 @@ class MyAsyncServerSocketChannel(private val port: Int) {
 
         val map = mutableMapOf<SocketChannel, MyAsyncSocketChannel>()
         while (true) {
+
             val count = selector.select()
-            if (count >= 0) {
+            if (count > 0) {
                 val selectedKeys = selector.selectedKeys()
                 val iterator = selectedKeys.iterator()
                 while (iterator.hasNext()) {
@@ -56,7 +57,7 @@ class MyAsyncServerSocketChannel(private val port: Int) {
                                 socketChannel.configureBlocking(false)
                                 val selectionKey =
                                     socketChannel.register(selector, SelectionKey.OP_READ )
-                                val myAsyncSocketChannel = MyAsyncSocketChannel(socketChannel, selectionKey)
+                                val myAsyncSocketChannel = MyAsyncSocketChannel(socketChannel, selectionKey,selector)
                                 map[socketChannel] = myAsyncSocketChannel
                                 synchronized(this) {
                                     acceptList.add(myAsyncSocketChannel)
@@ -71,6 +72,11 @@ class MyAsyncServerSocketChannel(private val port: Int) {
                             val myAsyncSocketChannel = map[next.channel()]
                             myAsyncSocketChannel?.doRead()
                         }
+                        if (next.isValid && next.isWritable) {
+                            val myAsyncSocketChannel = map[next.channel()]
+                            myAsyncSocketChannel?.doWrite()
+                        }
+
                     }
                 }
             }
@@ -79,7 +85,7 @@ class MyAsyncServerSocketChannel(private val port: Int) {
     }
 }
 
-class MyAsyncSocketChannel(val socketChannel: SocketChannel, val selectionKey: SelectionKey) {
+class MyAsyncSocketChannel(val socketChannel: SocketChannel, val selectionKey: SelectionKey,val selector: Selector) {
     val remoteAddress by socketChannel::remoteAddress
     private var readConsumer: Consumer<ByteBuffer>? = null
     private val messages = LinkedList<ByteBuffer>()
@@ -92,23 +98,42 @@ class MyAsyncSocketChannel(val socketChannel: SocketChannel, val selectionKey: S
     }
     fun write(byteBuffer: ByteBuffer) {
         selectionKey.attach(byteBuffer)
-        doWrite()
+        selectionKey.interestOps(SelectionKey.OP_WRITE)
+        //改变之后要手动通知 否则还阻塞在select()中
+        selector.wakeup()
+
     }
     fun doRead() {
-        val buffer = ByteBuffer.allocate(1024)
-        socketChannel.read(buffer)
-        messages.add(buffer)
-        readConsumer?.let { rc ->
-            messages.forEach { rc.accept(it) }
-            messages.clear()
-            readConsumer = null
+        try {
+            val buffer = ByteBuffer.allocate(1024)
+            socketChannel.read(buffer)
+            messages.add(buffer)
+            readConsumer?.let { rc ->
+                rc.accept(messages.poll())
+                readConsumer = null
+            }
+        }catch (e:Exception){
+            selectionKey.cancel()
+            socketChannel.close()
+        }finally {
+
         }
+
     }
     fun doWrite() {
-        val attachment = selectionKey.attachment()
-        attachment?.let {
-            selectionKey.attach(null)
-            socketChannel.write(it as ByteBuffer)
+
+        try {
+            val attachment = selectionKey.attachment()
+            attachment?.let {
+                selectionKey.attach(null)
+                socketChannel.write(it as ByteBuffer)
+                selectionKey.interestOps(SelectionKey.OP_READ)
+            }
+        }catch (e:Exception){
+            selectionKey.cancel()
+            socketChannel.close()
+        }finally {
+
         }
 
     }
