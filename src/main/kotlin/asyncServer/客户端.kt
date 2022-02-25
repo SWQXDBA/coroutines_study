@@ -36,7 +36,7 @@ class MyClint(val port: Int) {
         while (scanner.hasNext()) {
             val bufferedWriter = BufferedWriter(OutputStreamWriter(outputStream))
             val nextLine = scanner.nextLine()
-            bufferedWriter.write(nextLine )
+            bufferedWriter.write(nextLine)
             bufferedWriter.flush()
             println("发送了")
         }

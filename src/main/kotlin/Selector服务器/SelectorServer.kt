@@ -64,6 +64,7 @@ class SelectorServer(private val port: Int) {
         while (true) {
             val count = selector.select()
             if (count > 0) {
+                println("count"+count)
                 val selectedKeys = selector.selectedKeys()
                 val iterator = selectedKeys.iterator()
                 while (iterator.hasNext()) {
@@ -86,7 +87,6 @@ class SelectorServer(private val port: Int) {
                         }
                         if (next.isWritable) {
                             write(next)
-
                         }
                     }
 
