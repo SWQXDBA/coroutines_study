@@ -1,9 +1,7 @@
 package 同步机制.通道
 
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.yield
 
 fun main(): Unit = runBlocking {
     val channel = Channel<String>(3)
@@ -17,6 +15,7 @@ fun main(): Unit = runBlocking {
                 println("$co 发送了$num")
                 //让出线程
                 yield()
+
             }
         }
     }
