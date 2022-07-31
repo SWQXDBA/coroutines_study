@@ -1,15 +1,20 @@
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlin.concurrent.thread
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.startCoroutine
 
 fun main() {
-    test4()
-
-
+    suspend {
+        println("ok")
+    } .startCoroutine(Continuation(EmptyCoroutineContext){
+        println("ok2")
+    })
+//    test4()
 }
-
+suspend fun get() = suspendCancellableCoroutine<Int> { c->
+    c.resumeWith(Result.success(1))
+}
 fun test1() {
     GlobalScope.launch { // 在后台启动一个新的协程并继续
         delay(1000L) // 非阻塞的等待 1 秒钟（默认时间单位是毫秒）
