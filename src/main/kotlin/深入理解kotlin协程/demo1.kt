@@ -20,8 +20,6 @@ fun main() {
         }
     })
 
-
-
     ::fun1.createCoroutine(object : Continuation<Int> {
         override val context: CoroutineContext = EmptyCoroutineContext
         override fun resumeWith(result: Result<Int>) {
